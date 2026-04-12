@@ -1,6 +1,7 @@
 # Ethereum Balance for Home Assistant
 
-[![HACS Validation](https://github.com/SurfHost/ha-ethereum-balance/actions/workflows/validate.yml/badge.svg)](https://github.com/SurfHost/ha-ethereum-balance/actions/workflows/validate.yml)
+[![Validate](https://github.com/SurfHost/ha-ethereum-balance/actions/workflows/validate.yml/badge.svg)](https://github.com/SurfHost/ha-ethereum-balance/actions/workflows/validate.yml)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
 A Home Assistant custom integration to monitor Ethereum wallet balances using the [Etherscan API](https://etherscan.io/apis).
 
