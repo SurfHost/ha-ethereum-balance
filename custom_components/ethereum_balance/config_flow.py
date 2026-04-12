@@ -45,7 +45,7 @@ def _parse_wallets(raw_text: str) -> tuple[list[dict[str, str]], str | None]:
 
     Accepts lines in format:
         Name:0xAddress
-        0xAddress  (name defaults to shortened address)
+        0xAddress  (name stored as empty string, displayed as "Wallet")
 
     Returns (wallets, error_key) where error_key is None on success.
     """
@@ -55,19 +55,18 @@ def _parse_wallets(raw_text: str) -> tuple[list[dict[str, str]], str | None]:
         if not line:
             continue
 
-        if ":" in line:
+        # Only split on ":" if the part before it is NOT an eth address
+        # This handles both "Name:0xAddr" and plain "0xAddr"
+        if ":" in line and not ETH_ADDRESS_PATTERN.match(line.partition(":")[0].strip()):
             name, _, address = line.partition(":")
             name = name.strip()
             address = address.strip()
         else:
             address = line
-            name = f"{address[:6]}...{address[-4:]}"
+            name = ""
 
         if not ETH_ADDRESS_PATTERN.match(address):
             return [], "invalid_address"
-
-        if not name:
-            name = f"{address[:6]}...{address[-4:]}"
 
         wallets.append({"name": name, "address": address})
 
@@ -78,7 +77,10 @@ def _wallets_to_text(wallets: list[dict[str, str]]) -> str:
     """Convert wallet list back to text for the form."""
     lines: list[str] = []
     for wallet in wallets:
-        lines.append(f"{wallet['name']}:{wallet['address']}")
+        if wallet["name"]:
+            lines.append(f"{wallet['name']}:{wallet['address']}")
+        else:
+            lines.append(wallet["address"])
     return "\n".join(lines)
 
 

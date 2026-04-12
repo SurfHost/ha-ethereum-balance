@@ -165,7 +165,7 @@ async def async_setup_entry(
         entities.append(EthereumBalanceSensor(coordinator, eth_price_local))
 
     for wallet in get_wallets(entry):
-        name = wallet["name"]
+        name = wallet["name"] or "Wallet"
         address = wallet["address"]
         entities.append(
             EthereumBalanceSensor(coordinator, _make_balance_sensor(name, address)),

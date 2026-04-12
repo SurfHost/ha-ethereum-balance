@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2] - 2026-04-12
+
+### Fixed
+- Wallets without a name now show as "Wallet balance" and "Wallet value" instead of the truncated address
+- Options flow now shows plain address (not Name:Address) when no name was given
+- Re-editing wallets no longer corrupts the address format
+
 ## [0.3.1] - 2026-04-12
 
 ### Fixed
