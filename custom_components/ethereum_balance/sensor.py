@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from .const import CONF_ADDRESSES, CONF_WALLETS
+from .const import CONF_ADDRESSES, CONF_LOCAL_CURRENCY, CONF_OER_API_KEY, CONF_WALLETS
 from .coordinator import EthereumBalanceConfigEntry, EthereumBalanceCoordinator
 from .entity import EthereumBalanceEntity
 from .models import EthereumData
@@ -94,7 +94,38 @@ def _make_value_sensor(
         extra_attrs_fn=lambda data, a=addr_lower: {
             "address": data.wallets[a].address,
             "eth_balance": data.wallets[a].balance_eth,
-            "eth_price": data.eth_price.usd if data.eth_price else None,
+            "eth_price_usd": data.eth_price.usd if data.eth_price else None,
+        }
+        if a in data.wallets
+        else {},
+    )
+
+
+def _make_local_value_sensor(
+    name: str, address: str, currency: str
+) -> EthereumBalanceSensorDescription:
+    """Create a local currency value sensor description for a wallet."""
+    addr_lower = address.lower()
+
+    return EthereumBalanceSensorDescription(
+        key=f"local_value_{addr_lower}",
+        translation_key="wallet_local_value",
+        name=f"{name} value {currency}",
+        native_unit_of_measurement=currency,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
+        icon="mdi:cash-multiple",
+        value_fn=lambda data, a=addr_lower: round(
+            data.wallets[a].balance_eth * data.eth_price.usd * data.exchange_rate.rate, 2
+        )
+        if a in data.wallets and data.eth_price and data.exchange_rate
+        else None,
+        extra_attrs_fn=lambda data, a=addr_lower: {
+            "address": data.wallets[a].address,
+            "eth_balance": data.wallets[a].balance_eth,
+            "eth_price_usd": data.eth_price.usd if data.eth_price else None,
+            "exchange_rate": data.exchange_rate.rate if data.exchange_rate else None,
         }
         if a in data.wallets
         else {},
@@ -106,7 +137,6 @@ def _get_wallets(entry: EthereumBalanceConfigEntry) -> list[dict[str, str]]:
     wallets: list[dict[str, str]] = entry.options.get(CONF_WALLETS, [])
     if wallets:
         return wallets
-    # Fallback to old format (plain address list)
     addresses: list[str] = entry.options.get(CONF_ADDRESSES, [])
     return [
         {"name": f"{a[:6]}...{a[-4:]}", "address": a}
@@ -121,6 +151,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up Ethereum Balance sensors."""
     coordinator = entry.runtime_data
+    oer_key: str = entry.options.get(CONF_OER_API_KEY, "")
+    local_currency: str = entry.options.get(CONF_LOCAL_CURRENCY, "")
+    has_local_currency = bool(oer_key and local_currency)
 
     entities: list[EthereumBalanceSensor] = [
         EthereumBalanceSensor(coordinator, ETH_PRICE_SENSOR),
@@ -135,6 +168,12 @@ async def async_setup_entry(
         entities.append(
             EthereumBalanceSensor(coordinator, _make_value_sensor(name, address)),
         )
+        if has_local_currency:
+            entities.append(
+                EthereumBalanceSensor(
+                    coordinator, _make_local_value_sensor(name, address, local_currency)
+                ),
+            )
 
     async_add_entities(entities)
 

@@ -23,3 +23,11 @@ class EtherscanAPIError(EthereumBalanceError):
 
 class EtherscanRateLimitError(EthereumBalanceError):
     """Raised when the API rate limit is exceeded."""
+
+
+class OERConnectionError(EthereumBalanceError):
+    """Raised when unable to connect to Open Exchange Rates."""
+
+
+class OERAuthenticationError(EthereumBalanceError):
+    """Raised when the OER API key is invalid."""

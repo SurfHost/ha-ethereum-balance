@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0] - 2026-04-12
+
+### Added
+- Open Exchange Rates integration for local currency conversion (EUR, GBP, etc.)
+- Local currency value sensor per wallet (e.g. "Savings value EUR")
+- OER API key and local currency fields in options flow
+- Validation for OER API key on save
+
+### Changed
+- Default update interval changed from 300s to 30s
+- Minimum update interval changed from 60s to 10s
+- Exchange rates cached for 2 hours to stay within OER free tier (1,000 requests/month)
+
 ## [0.2.0] - 2026-04-12
 
 ### Added

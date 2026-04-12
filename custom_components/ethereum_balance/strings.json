@@ -29,15 +29,21 @@
     "step": {
       "init": {
         "title": "Ethereum Balance Options",
-        "description": "Enter one wallet per line as Name:0xAddress (e.g. My Wallet:0x1234...abcd). The name is optional — if omitted, a shortened address is used.",
+        "description": "Enter one wallet per line as Name:0xAddress (e.g. My Wallet:0x1234...abcd). The name is optional.",
         "data": {
           "wallets": "Wallets",
-          "scan_interval": "Update interval (seconds)"
+          "scan_interval": "Update interval (seconds)",
+          "oer_api_key": "Open Exchange Rates API key (optional)",
+          "local_currency": "Local currency (e.g. EUR, GBP)"
         }
       }
     },
     "error": {
-      "invalid_address": "One or more addresses are invalid. Use format: 0x followed by 40 hex characters."
+      "invalid_address": "One or more addresses are invalid. Use format: 0x followed by 40 hex characters.",
+      "invalid_oer_key": "Invalid Open Exchange Rates API key",
+      "cannot_connect_oer": "Cannot connect to Open Exchange Rates",
+      "currency_required": "Please enter a local currency when using Open Exchange Rates",
+      "oer_key_required": "Please enter an Open Exchange Rates API key to use a local currency"
     }
   },
   "entity": {
@@ -50,6 +56,9 @@
       },
       "wallet_value": {
         "name": "Wallet value"
+      },
+      "wallet_local_value": {
+        "name": "Wallet local value"
       }
     }
   }

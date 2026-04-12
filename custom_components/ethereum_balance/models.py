@@ -22,9 +22,18 @@ class EthPrice:
     btc: float
 
 
+@dataclass(frozen=True, slots=True)
+class ExchangeRate:
+    """Represents an exchange rate from USD to a local currency."""
+
+    currency: str
+    rate: float
+
+
 @dataclass(slots=True)
 class EthereumData:
     """Container for all Ethereum data from the coordinator."""
 
     wallets: dict[str, WalletBalance] = field(default_factory=dict)
     eth_price: EthPrice | None = None
+    exchange_rate: ExchangeRate | None = None

@@ -14,9 +14,11 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFl
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import EtherscanClient
+from .api import EtherscanClient, OpenExchangeRatesClient
 from .const import (
     CONF_API_KEY,
+    CONF_LOCAL_CURRENCY,
+    CONF_OER_API_KEY,
     CONF_SCAN_INTERVAL,
     CONF_WALLETS,
     DEFAULT_SCAN_INTERVAL,
@@ -25,7 +27,7 @@ from .const import (
     MIN_SCAN_INTERVAL,
 )
 from .coordinator import EthereumBalanceConfigEntry
-from .errors import EtherscanAuthenticationError, EtherscanConnectionError
+from .errors import EtherscanAuthenticationError, EtherscanConnectionError, OERAuthenticationError, OERConnectionError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,7 +85,7 @@ def _wallets_to_text(wallets: list[dict[str, str]]) -> str:
 class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Ethereum Balance."""
 
-    VERSION = 2
+    VERSION = 3
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -115,7 +117,12 @@ class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(
                     title="Ethereum Balance",
                     data={CONF_API_KEY: user_input[CONF_API_KEY]},
-                    options={CONF_WALLETS: [], CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL},
+                    options={
+                        CONF_WALLETS: [],
+                        CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+                        CONF_OER_API_KEY: "",
+                        CONF_LOCAL_CURRENCY: "",
+                    },
                 )
 
         return self.async_show_form(
@@ -181,12 +188,31 @@ class EthereumBalanceOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            # Parse wallets
             raw_text: str = user_input.get(CONF_WALLETS, "")
             wallets, error = _parse_wallets(raw_text)
-
             if error:
                 errors[CONF_WALLETS] = error
-            else:
+
+            # Validate OER key if provided
+            oer_key: str = user_input.get(CONF_OER_API_KEY, "").strip()
+            local_currency: str = user_input.get(CONF_LOCAL_CURRENCY, "").strip().upper()
+
+            if oer_key and local_currency:
+                session = async_get_clientsession(self.hass)
+                oer_client = OpenExchangeRatesClient(session, oer_key)
+                try:
+                    await oer_client.async_validate_key()
+                except OERAuthenticationError:
+                    errors[CONF_OER_API_KEY] = "invalid_oer_key"
+                except OERConnectionError:
+                    errors[CONF_OER_API_KEY] = "cannot_connect_oer"
+            elif oer_key and not local_currency:
+                errors[CONF_LOCAL_CURRENCY] = "currency_required"
+            elif local_currency and not oer_key:
+                errors[CONF_OER_API_KEY] = "oer_key_required"
+
+            if not errors:
                 return self.async_create_entry(
                     title="",
                     data={
@@ -194,6 +220,8 @@ class EthereumBalanceOptionsFlow(OptionsFlow):
                         CONF_SCAN_INTERVAL: user_input.get(
                             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
                         ),
+                        CONF_OER_API_KEY: oer_key,
+                        CONF_LOCAL_CURRENCY: local_currency,
                     },
                 )
 
@@ -203,6 +231,8 @@ class EthereumBalanceOptionsFlow(OptionsFlow):
         current_interval: int = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
+        current_oer_key: str = self.config_entry.options.get(CONF_OER_API_KEY, "")
+        current_currency: str = self.config_entry.options.get(CONF_LOCAL_CURRENCY, "")
 
         return self.async_show_form(
             step_id="init",
@@ -219,6 +249,14 @@ class EthereumBalanceOptionsFlow(OptionsFlow):
                         vol.Coerce(int),
                         vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                     ),
+                    vol.Optional(
+                        CONF_OER_API_KEY,
+                        default=current_oer_key,
+                    ): str,
+                    vol.Optional(
+                        CONF_LOCAL_CURRENCY,
+                        default=current_currency,
+                    ): str,
                 }
             ),
             errors=errors,

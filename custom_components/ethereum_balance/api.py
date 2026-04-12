@@ -1,4 +1,4 @@
-"""Etherscan API client for the Ethereum Balance integration."""
+"""API clients for the Ethereum Balance integration."""
 
 from __future__ import annotations
 
@@ -9,14 +9,16 @@ from typing import Any
 
 import aiohttp
 
-from .const import ETHERSCAN_API_URL, ETHERSCAN_CHAIN_ID, MAX_BATCH_ADDRESSES, WEI_PER_ETH
+from .const import ETHERSCAN_API_URL, ETHERSCAN_CHAIN_ID, MAX_BATCH_ADDRESSES, OER_API_URL, WEI_PER_ETH
 from .errors import (
     EtherscanAPIError,
     EtherscanAuthenticationError,
     EtherscanConnectionError,
     EtherscanRateLimitError,
+    OERAuthenticationError,
+    OERConnectionError,
 )
-from .models import EthPrice, WalletBalance
+from .models import EthPrice, ExchangeRate, WalletBalance
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,4 +119,64 @@ class EtherscanClient:
         return EthPrice(
             usd=float(result["ethusd"]),
             btc=float(result["ethbtc"]),
+        )
+
+
+class OpenExchangeRatesClient:
+    """Client for the Open Exchange Rates API."""
+
+    def __init__(self, session: aiohttp.ClientSession, api_key: str) -> None:
+        """Initialize the client."""
+        self._session = session
+        self._api_key = api_key
+
+    async def async_validate_key(self) -> bool:
+        """Validate the API key by fetching latest rates."""
+        try:
+            async with self._session.get(
+                f"{OER_API_URL}/latest.json",
+                params={"app_id": self._api_key},
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as response:
+                if response.status in (401, 403):
+                    raise OERAuthenticationError("Invalid Open Exchange Rates API key")
+                response.raise_for_status()
+                return True
+        except OERAuthenticationError:
+            raise
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise OERConnectionError(
+                f"Cannot connect to Open Exchange Rates: {err}"
+            ) from err
+
+    async def async_get_rate(self, currency: str) -> ExchangeRate:
+        """Fetch the exchange rate from USD to the given currency."""
+        try:
+            async with self._session.get(
+                f"{OER_API_URL}/latest.json",
+                params={
+                    "app_id": self._api_key,
+                    "symbols": currency.upper(),
+                },
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as response:
+                if response.status in (401, 403):
+                    raise OERAuthenticationError("Invalid Open Exchange Rates API key")
+                response.raise_for_status()
+                data = await response.json()
+        except OERAuthenticationError:
+            raise
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise OERConnectionError(
+                f"Cannot connect to Open Exchange Rates: {err}"
+            ) from err
+
+        rates: dict[str, float] = data.get("rates", {})
+        currency_upper = currency.upper()
+        if currency_upper not in rates:
+            raise OERConnectionError(f"Currency {currency_upper} not found in OER response")
+
+        return ExchangeRate(
+            currency=currency_upper,
+            rate=float(rates[currency_upper]),
         )

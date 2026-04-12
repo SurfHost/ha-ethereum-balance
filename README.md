@@ -55,7 +55,9 @@ Or manually:
 | Option | Default | Description |
 |--------|---------|-------------|
 | Wallets | _(empty)_ | One wallet per line as `Name:0xAddress` (name is optional) |
-| Update interval | 300 | Polling interval in seconds (60-3600) |
+| Update interval | 30 | Polling interval in seconds (10-3600) |
+| OER API key | _(empty)_ | Open Exchange Rates API key (optional, for local currency) |
+| Local currency | _(empty)_ | Target currency code, e.g. `EUR`, `GBP` (requires OER key) |
 
 **Example wallet input:**
 ```
@@ -63,6 +65,16 @@ My Savings:0x1234567890abcdef1234567890abcdef12345678
 Cold Wallet:0xabcdef1234567890abcdef1234567890abcdef12
 0x9876543210fedcba9876543210fedcba98765432
 ```
+
+## Local Currency Conversion
+
+To show wallet values in your local currency (e.g. EUR):
+
+1. Get a free API key at [openexchangerates.org](https://openexchangerates.org/signup/free)
+2. In the integration options, enter the OER API key and your currency code (e.g. `EUR`)
+3. A new sensor per wallet appears showing the value in your local currency
+
+Exchange rates are cached and refreshed every 2 hours to stay within the OER free tier (1,000 requests/month).
 
 ## Sensors
 
@@ -78,19 +90,22 @@ Cold Wallet:0xabcdef1234567890abcdef1234567890abcdef12
 ### Wallet Value (per wallet)
 - **State**: USD value of the wallet
 - **Name**: Uses your custom name (e.g. "My Savings value")
-- **Attributes**: `address`, `eth_balance`, `eth_price`
+- **Attributes**: `address`, `eth_balance`, `eth_price_usd`
+
+### Wallet Local Value (per wallet, optional)
+- **State**: Value in your local currency (e.g. EUR)
+- **Name**: Uses your custom name (e.g. "My Savings value EUR")
+- **Attributes**: `address`, `eth_balance`, `eth_price_usd`, `exchange_rate`
+- Only created when OER API key and local currency are configured
 
 ## Rate Limits
 
-The integration is designed to stay well within [Etherscan's free tier limits](https://docs.etherscan.io/resources/rate-limits) (3 calls/sec, 100k calls/day):
-
+### Etherscan (3 calls/sec, 100k calls/day)
 - Batch queries fetch up to 20 wallet balances in a single API call
-- Default 5-minute interval = ~576 calls/day (0.6% of daily limit)
 - Built-in sliding-window rate limiter prevents exceeding 3 calls/sec
 
-## Roadmap
-
-- [ ] Open Exchange Rates integration for USD to EUR/other currency conversion
+### Open Exchange Rates (1,000 requests/month)
+- Exchange rates cached for 2 hours (~360 calls/month)
 
 ## License
 
