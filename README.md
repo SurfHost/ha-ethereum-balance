@@ -12,7 +12,7 @@ A Home Assistant custom integration to monitor Ethereum wallet balances using th
 - USD value calculation per wallet
 - Built-in rate limiting to stay within Etherscan free tier limits
 - Batch API queries for efficient multi-wallet monitoring
-- Configurable update interval (default: 5 minutes)
+- Configurable update interval (default: 30 seconds)
 
 ## Requirements
 

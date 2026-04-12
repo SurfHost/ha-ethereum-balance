@@ -30,12 +30,12 @@ class EtherscanClient:
         """Initialize the client."""
         self._session = session
         self._api_key = api_key
-        self._semaphore = asyncio.Semaphore(3)
+        self._lock = asyncio.Lock()
         self._call_timestamps: list[float] = []
 
     async def _throttled_get(self, params: dict[str, str]) -> Any:
         """Make a rate-limited GET request to Etherscan."""
-        async with self._semaphore:
+        async with self._lock:
             now = time.monotonic()
             # Remove timestamps older than 1 second
             self._call_timestamps = [t for t in self._call_timestamps if now - t < 1.0]
@@ -44,35 +44,34 @@ class EtherscanClient:
                 sleep_time = 1.0 - (now - self._call_timestamps[0])
                 if sleep_time > 0:
                     await asyncio.sleep(sleep_time)
-                    self._call_timestamps = self._call_timestamps[1:]
 
             self._call_timestamps.append(time.monotonic())
-            params["apikey"] = self._api_key
-            params["chainid"] = ETHERSCAN_CHAIN_ID
 
-            try:
-                async with self._session.get(
-                    ETHERSCAN_API_URL, params=params, timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    response.raise_for_status()
-                    data = await response.json()
-            except (aiohttp.ClientError, TimeoutError) as err:
-                raise EtherscanConnectionError(
-                    f"Cannot connect to Etherscan: {err}"
-                ) from err
+        params["apikey"] = self._api_key
+        params["chainid"] = ETHERSCAN_CHAIN_ID
 
-            if data.get("status") == "0":
-                result = str(data.get("result", ""))
-                message = str(data.get("message", ""))
-                if "invalid api" in result.lower() or "invalid api" in message.lower():
-                    raise EtherscanAuthenticationError("Invalid Etherscan API key")
-                if "rate limit" in result.lower() or "rate limit" in message.lower():
-                    raise EtherscanRateLimitError("Etherscan API rate limit exceeded")
-                # "No transactions found" is not an error for balance queries
-                if "no transactions found" not in result.lower():
-                    raise EtherscanAPIError(f"Etherscan API error: {result}")
+        try:
+            async with self._session.get(
+                ETHERSCAN_API_URL, params=params, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                response.raise_for_status()
+                data = await response.json()
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise EtherscanConnectionError(
+                f"Cannot connect to Etherscan: {err}"
+            ) from err
 
-            return data.get("result")
+        if data.get("status") == "0":
+            result = str(data.get("result", ""))
+            message = str(data.get("message", ""))
+            if "invalid api" in result.lower() or "invalid api" in message.lower():
+                raise EtherscanAuthenticationError("Invalid Etherscan API key")
+            if "rate limit" in result.lower() or "rate limit" in message.lower():
+                raise EtherscanRateLimitError("Etherscan API rate limit exceeded")
+            if "no transactions found" not in result.lower():
+                raise EtherscanAPIError(f"Etherscan API error: {result}")
+
+        return data.get("result")
 
     async def async_validate_key(self) -> bool:
         """Validate the API key by fetching ETH price."""
@@ -94,8 +93,12 @@ class EtherscanClient:
                 }
             )
 
-            if isinstance(result, list):
-                for entry in result:
+            if not isinstance(result, list):
+                _LOGGER.warning("Unexpected balance response format: %s", type(result))
+                continue
+
+            for entry in result:
+                try:
                     addr = str(entry["account"]).lower()
                     balance_wei = int(entry["balance"])
                     balance_eth = round(balance_wei / WEI_PER_ETH, 8)
@@ -104,6 +107,8 @@ class EtherscanClient:
                         balance_wei=balance_wei,
                         balance_eth=balance_eth,
                     )
+                except (KeyError, ValueError) as err:
+                    _LOGGER.warning("Failed to parse balance entry: %s", err)
 
         return wallets
 
@@ -116,10 +121,13 @@ class EtherscanClient:
             }
         )
 
-        return EthPrice(
-            usd=float(result["ethusd"]),
-            btc=float(result["ethbtc"]),
-        )
+        try:
+            return EthPrice(
+                usd=float(result["ethusd"]),
+                btc=float(result["ethbtc"]),
+            )
+        except (KeyError, TypeError, ValueError) as err:
+            raise EtherscanAPIError(f"Unexpected ethprice response: {err}") from err
 
 
 class OpenExchangeRatesClient:

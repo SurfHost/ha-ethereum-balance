@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -17,8 +16,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from .const import CONF_ADDRESSES, CONF_LOCAL_CURRENCY, CONF_OER_API_KEY, CONF_WALLETS
-from .coordinator import EthereumBalanceConfigEntry, EthereumBalanceCoordinator
+from .const import CONF_LOCAL_CURRENCY, CONF_OER_API_KEY
+from .coordinator import EthereumBalanceConfigEntry, EthereumBalanceCoordinator, get_wallets
 from .entity import EthereumBalanceEntity
 from .models import EthereumData
 
@@ -27,13 +26,12 @@ from .models import EthereumData
 class EthereumBalanceSensorDescription(SensorEntityDescription):
     """Describes an Ethereum Balance sensor entity."""
 
-    value_fn: Callable[[EthereumData], StateType | datetime] = lambda _: None
+    value_fn: Callable[[EthereumData], StateType] = lambda _: None
     extra_attrs_fn: Callable[[EthereumData], dict[str, Any]] | None = None
 
 
 ETH_PRICE_SENSOR = EthereumBalanceSensorDescription(
     key="eth_price",
-    translation_key="eth_price",
     name="ETH price",
     native_unit_of_measurement="USD",
     device_class=SensorDeviceClass.MONETARY,
@@ -41,7 +39,6 @@ ETH_PRICE_SENSOR = EthereumBalanceSensorDescription(
     suggested_display_precision=2,
     icon="mdi:currency-usd",
     value_fn=lambda data: round(data.eth_price.usd, 2) if data.eth_price else None,
-    extra_attrs_fn=None,
 )
 
 
@@ -53,7 +50,6 @@ def _make_balance_sensor(
 
     return EthereumBalanceSensorDescription(
         key=f"balance_{addr_lower}",
-        translation_key="wallet_balance",
         name=f"{name} balance",
         native_unit_of_measurement="ETH",
         state_class=SensorStateClass.TOTAL,
@@ -79,7 +75,6 @@ def _make_value_sensor(
 
     return EthereumBalanceSensorDescription(
         key=f"value_{addr_lower}",
-        translation_key="wallet_value",
         name=f"{name} value",
         native_unit_of_measurement="USD",
         device_class=SensorDeviceClass.MONETARY,
@@ -109,7 +104,6 @@ def _make_local_value_sensor(
 
     return EthereumBalanceSensorDescription(
         key=f"local_value_{addr_lower}",
-        translation_key="wallet_local_value",
         name=f"{name} value {currency}",
         native_unit_of_measurement=currency,
         device_class=SensorDeviceClass.MONETARY,
@@ -132,18 +126,6 @@ def _make_local_value_sensor(
     )
 
 
-def _get_wallets(entry: EthereumBalanceConfigEntry) -> list[dict[str, str]]:
-    """Get wallet list from options, supporting both old and new format."""
-    wallets: list[dict[str, str]] = entry.options.get(CONF_WALLETS, [])
-    if wallets:
-        return wallets
-    addresses: list[str] = entry.options.get(CONF_ADDRESSES, [])
-    return [
-        {"name": f"{a[:6]}...{a[-4:]}", "address": a}
-        for a in addresses
-    ]
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: EthereumBalanceConfigEntry,
@@ -162,7 +144,6 @@ async def async_setup_entry(
     if has_local_currency:
         eth_price_local = EthereumBalanceSensorDescription(
             key=f"eth_price_{local_currency.lower()}",
-            translation_key="eth_price_local",
             name=f"ETH price {local_currency}",
             native_unit_of_measurement=local_currency,
             device_class=SensorDeviceClass.MONETARY,
@@ -183,7 +164,7 @@ async def async_setup_entry(
         )
         entities.append(EthereumBalanceSensor(coordinator, eth_price_local))
 
-    for wallet in _get_wallets(entry):
+    for wallet in get_wallets(entry):
         name = wallet["name"]
         address = wallet["address"]
         entities.append(
@@ -208,7 +189,7 @@ class EthereumBalanceSensor(EthereumBalanceEntity, SensorEntity):
     entity_description: EthereumBalanceSensorDescription
 
     @property
-    def native_value(self) -> StateType | datetime:
+    def native_value(self) -> StateType:
         """Return the sensor value."""
         if self.coordinator.data is None:
             return None

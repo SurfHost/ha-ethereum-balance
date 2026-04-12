@@ -45,24 +45,5 @@
       "currency_required": "Please enter a local currency when using Open Exchange Rates",
       "oer_key_required": "Please enter an Open Exchange Rates API key to use a local currency"
     }
-  },
-  "entity": {
-    "sensor": {
-      "eth_price": {
-        "name": "ETH price"
-      },
-      "eth_price_local": {
-        "name": "ETH price local"
-      },
-      "wallet_balance": {
-        "name": "Wallet balance"
-      },
-      "wallet_value": {
-        "name": "Wallet value"
-      },
-      "wallet_local_value": {
-        "name": "Wallet local value"
-      }
-    }
   }
 }

@@ -7,7 +7,6 @@ from typing import Final
 DOMAIN: Final = "ethereum_balance"
 
 CONF_API_KEY: Final = "api_key"
-CONF_ADDRESSES: Final = "addresses"
 CONF_WALLETS: Final = "wallets"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 CONF_OER_API_KEY: Final = "oer_api_key"

@@ -1,6 +1,6 @@
 [project]
 name = "ha-ethereum-balance"
-version = "0.1.0"
+version = "0.3.0"
 description = "Ethereum balance tracker for Home Assistant using the Etherscan API"
 requires-python = ">=3.13"
 license = "MIT"
