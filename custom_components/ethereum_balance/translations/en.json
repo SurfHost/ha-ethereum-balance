@@ -29,9 +29,9 @@
     "step": {
       "init": {
         "title": "Ethereum Balance Options",
-        "description": "Enter one Ethereum address per line (0x followed by 40 hex characters).",
+        "description": "Enter one wallet per line as Name:0xAddress (e.g. My Wallet:0x1234...abcd). The name is optional — if omitted, a shortened address is used.",
         "data": {
-          "addresses": "Wallet addresses",
+          "wallets": "Wallets",
           "scan_interval": "Update interval (seconds)"
         }
       }
@@ -47,6 +47,9 @@
       },
       "wallet_balance": {
         "name": "Wallet balance"
+      },
+      "wallet_value": {
+        "name": "Wallet value"
       }
     }
   }

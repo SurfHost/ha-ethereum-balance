@@ -8,6 +8,7 @@ DOMAIN: Final = "ethereum_balance"
 
 CONF_API_KEY: Final = "api_key"
 CONF_ADDRESSES: Final = "addresses"
+CONF_WALLETS: Final = "wallets"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 
 DEFAULT_SCAN_INTERVAL: Final = 300

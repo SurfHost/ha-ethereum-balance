@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0] - 2026-04-12
+
+### Added
+- Custom wallet names (format: `Name:0xAddress` in options)
+- USD value sensor per wallet (separate from balance sensor)
+
+### Changed
+- Migrated to Etherscan API V2
+- Wallet config changed from plain addresses to named entries
+- Backwards compatible with v0.1.0 address-only format
+
 ## [0.1.0] - 2026-04-12
 
 ### Added

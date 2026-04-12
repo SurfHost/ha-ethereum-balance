@@ -11,7 +11,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import EtherscanClient
-from .const import CONF_ADDRESSES, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import CONF_ADDRESSES, CONF_WALLETS, DEFAULT_SCAN_INTERVAL, DOMAIN
 from .errors import (
     EtherscanAuthenticationError,
     EtherscanConnectionError,
@@ -22,6 +22,15 @@ from .models import EthereumData
 _LOGGER = logging.getLogger(__name__)
 
 type EthereumBalanceConfigEntry = ConfigEntry[EthereumBalanceCoordinator]
+
+
+def get_wallet_addresses(entry: ConfigEntry[EthereumBalanceCoordinator]) -> list[str]:
+    """Extract addresses from config entry options, supporting both old and new format."""
+    wallets: list[dict[str, str]] = entry.options.get(CONF_WALLETS, [])
+    if wallets:
+        return [w["address"] for w in wallets]
+    # Fallback to old format
+    return entry.options.get(CONF_ADDRESSES, [])
 
 
 class EthereumBalanceCoordinator(DataUpdateCoordinator[EthereumData]):
@@ -49,7 +58,7 @@ class EthereumBalanceCoordinator(DataUpdateCoordinator[EthereumData]):
         data = self.data or EthereumData()
 
         try:
-            addresses: list[str] = self.config_entry.options.get(CONF_ADDRESSES, [])
+            addresses = get_wallet_addresses(self.config_entry)
             if addresses:
                 data.wallets = await self.client.async_get_balances(addresses)
             data.eth_price = await self.client.async_get_eth_price()

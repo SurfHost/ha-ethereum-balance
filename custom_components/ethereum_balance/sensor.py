@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from .const import CONF_ADDRESSES
+from .const import CONF_ADDRESSES, CONF_WALLETS
 from .coordinator import EthereumBalanceConfigEntry, EthereumBalanceCoordinator
 from .entity import EthereumBalanceEntity
 from .models import EthereumData
@@ -45,15 +45,16 @@ ETH_PRICE_SENSOR = EthereumBalanceSensorDescription(
 )
 
 
-def _make_wallet_sensor(address: str) -> EthereumBalanceSensorDescription:
-    """Create a sensor description for a wallet address."""
+def _make_balance_sensor(
+    name: str, address: str
+) -> EthereumBalanceSensorDescription:
+    """Create a balance sensor description for a wallet."""
     addr_lower = address.lower()
-    short_addr = f"{address[:6]}...{address[-4:]}"
 
     return EthereumBalanceSensorDescription(
         key=f"balance_{addr_lower}",
         translation_key="wallet_balance",
-        name=f"Balance {short_addr}",
+        name=f"{name} balance",
         native_unit_of_measurement="ETH",
         state_class=SensorStateClass.TOTAL,
         suggested_display_precision=8,
@@ -64,13 +65,53 @@ def _make_wallet_sensor(address: str) -> EthereumBalanceSensorDescription:
         extra_attrs_fn=lambda data, a=addr_lower: {
             "address": data.wallets[a].address,
             "balance_wei": str(data.wallets[a].balance_wei),
-            "usd_value": round(data.wallets[a].balance_eth * data.eth_price.usd, 2)
-            if data.eth_price
-            else None,
         }
         if a in data.wallets
         else {},
     )
+
+
+def _make_value_sensor(
+    name: str, address: str
+) -> EthereumBalanceSensorDescription:
+    """Create a USD value sensor description for a wallet."""
+    addr_lower = address.lower()
+
+    return EthereumBalanceSensorDescription(
+        key=f"value_{addr_lower}",
+        translation_key="wallet_value",
+        name=f"{name} value",
+        native_unit_of_measurement="USD",
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
+        icon="mdi:currency-usd",
+        value_fn=lambda data, a=addr_lower: round(
+            data.wallets[a].balance_eth * data.eth_price.usd, 2
+        )
+        if a in data.wallets and data.eth_price
+        else None,
+        extra_attrs_fn=lambda data, a=addr_lower: {
+            "address": data.wallets[a].address,
+            "eth_balance": data.wallets[a].balance_eth,
+            "eth_price": data.eth_price.usd if data.eth_price else None,
+        }
+        if a in data.wallets
+        else {},
+    )
+
+
+def _get_wallets(entry: EthereumBalanceConfigEntry) -> list[dict[str, str]]:
+    """Get wallet list from options, supporting both old and new format."""
+    wallets: list[dict[str, str]] = entry.options.get(CONF_WALLETS, [])
+    if wallets:
+        return wallets
+    # Fallback to old format (plain address list)
+    addresses: list[str] = entry.options.get(CONF_ADDRESSES, [])
+    return [
+        {"name": f"{a[:6]}...{a[-4:]}", "address": a}
+        for a in addresses
+    ]
 
 
 async def async_setup_entry(
@@ -85,10 +126,14 @@ async def async_setup_entry(
         EthereumBalanceSensor(coordinator, ETH_PRICE_SENSOR),
     ]
 
-    addresses: list[str] = entry.options.get(CONF_ADDRESSES, [])
-    for address in addresses:
+    for wallet in _get_wallets(entry):
+        name = wallet["name"]
+        address = wallet["address"]
         entities.append(
-            EthereumBalanceSensor(coordinator, _make_wallet_sensor(address)),
+            EthereumBalanceSensor(coordinator, _make_balance_sensor(name, address)),
+        )
+        entities.append(
+            EthereumBalanceSensor(coordinator, _make_value_sensor(name, address)),
         )
 
     async_add_entities(entities)

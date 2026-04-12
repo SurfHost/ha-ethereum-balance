@@ -54,8 +54,15 @@ Or manually:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| Wallet addresses | _(empty)_ | One Ethereum address per line (0x + 40 hex chars) |
+| Wallets | _(empty)_ | One wallet per line as `Name:0xAddress` (name is optional) |
 | Update interval | 300 | Polling interval in seconds (60-3600) |
+
+**Example wallet input:**
+```
+My Savings:0x1234567890abcdef1234567890abcdef12345678
+Cold Wallet:0xabcdef1234567890abcdef1234567890abcdef12
+0x9876543210fedcba9876543210fedcba98765432
+```
 
 ## Sensors
 
@@ -63,9 +70,15 @@ Or manually:
 - **State**: Current ETH price in USD
 - **Attributes**: `btc_price`
 
-### Wallet Balance (per address)
+### Wallet Balance (per wallet)
 - **State**: ETH balance (8 decimal precision)
-- **Attributes**: `address`, `balance_wei`, `usd_value`
+- **Name**: Uses your custom name (e.g. "My Savings balance")
+- **Attributes**: `address`, `balance_wei`
+
+### Wallet Value (per wallet)
+- **State**: USD value of the wallet
+- **Name**: Uses your custom name (e.g. "My Savings value")
+- **Attributes**: `address`, `eth_balance`, `eth_price`
 
 ## Rate Limits
 

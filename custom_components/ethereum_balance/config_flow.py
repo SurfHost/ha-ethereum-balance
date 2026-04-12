@@ -16,9 +16,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import EtherscanClient
 from .const import (
-    CONF_ADDRESSES,
     CONF_API_KEY,
     CONF_SCAN_INTERVAL,
+    CONF_WALLETS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL,
@@ -38,10 +38,52 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 )
 
 
+def _parse_wallets(raw_text: str) -> tuple[list[dict[str, str]], str | None]:
+    """Parse wallet entries from text input.
+
+    Accepts lines in format:
+        Name:0xAddress
+        0xAddress  (name defaults to shortened address)
+
+    Returns (wallets, error_key) where error_key is None on success.
+    """
+    wallets: list[dict[str, str]] = []
+    for line in raw_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        if ":" in line:
+            name, _, address = line.partition(":")
+            name = name.strip()
+            address = address.strip()
+        else:
+            address = line
+            name = f"{address[:6]}...{address[-4:]}"
+
+        if not ETH_ADDRESS_PATTERN.match(address):
+            return [], "invalid_address"
+
+        if not name:
+            name = f"{address[:6]}...{address[-4:]}"
+
+        wallets.append({"name": name, "address": address})
+
+    return wallets, None
+
+
+def _wallets_to_text(wallets: list[dict[str, str]]) -> str:
+    """Convert wallet list back to text for the form."""
+    lines: list[str] = []
+    for wallet in wallets:
+        lines.append(f"{wallet['name']}:{wallet['address']}")
+    return "\n".join(lines)
+
+
 class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Ethereum Balance."""
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -73,7 +115,7 @@ class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(
                     title="Ethereum Balance",
                     data={CONF_API_KEY: user_input[CONF_API_KEY]},
-                    options={CONF_ADDRESSES: [], CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL},
+                    options={CONF_WALLETS: [], CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL},
                 )
 
         return self.async_show_form(
@@ -139,29 +181,25 @@ class EthereumBalanceOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            raw_text: str = user_input.get(CONF_ADDRESSES, "")
-            addresses: list[str] = []
-            for line in re.split(r"[,\n]", raw_text):
-                addr = line.strip()
-                if not addr:
-                    continue
-                if not ETH_ADDRESS_PATTERN.match(addr):
-                    errors[CONF_ADDRESSES] = "invalid_address"
-                    break
-                addresses.append(addr)
+            raw_text: str = user_input.get(CONF_WALLETS, "")
+            wallets, error = _parse_wallets(raw_text)
 
-            if not errors:
+            if error:
+                errors[CONF_WALLETS] = error
+            else:
                 return self.async_create_entry(
                     title="",
                     data={
-                        CONF_ADDRESSES: addresses,
+                        CONF_WALLETS: wallets,
                         CONF_SCAN_INTERVAL: user_input.get(
                             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
                         ),
                     },
                 )
 
-        current_addresses: list[str] = self.config_entry.options.get(CONF_ADDRESSES, [])
+        current_wallets: list[dict[str, str]] = self.config_entry.options.get(
+            CONF_WALLETS, []
+        )
         current_interval: int = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
@@ -171,8 +209,8 @@ class EthereumBalanceOptionsFlow(OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Optional(
-                        CONF_ADDRESSES,
-                        default="\n".join(current_addresses),
+                        CONF_WALLETS,
+                        default=_wallets_to_text(current_wallets),
                     ): str,
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
