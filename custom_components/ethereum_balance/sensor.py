@@ -159,6 +159,31 @@ async def async_setup_entry(
         EthereumBalanceSensor(coordinator, ETH_PRICE_SENSOR),
     ]
 
+    if has_local_currency:
+        eth_price_local = EthereumBalanceSensorDescription(
+            key=f"eth_price_{local_currency.lower()}",
+            translation_key="eth_price_local",
+            name=f"ETH price {local_currency}",
+            native_unit_of_measurement=local_currency,
+            device_class=SensorDeviceClass.MONETARY,
+            state_class=SensorStateClass.MEASUREMENT,
+            suggested_display_precision=2,
+            icon="mdi:cash-multiple",
+            value_fn=lambda data: round(
+                data.eth_price.usd * data.exchange_rate.rate, 2
+            )
+            if data.eth_price and data.exchange_rate
+            else None,
+            extra_attrs_fn=lambda data: {
+                "usd_price": data.eth_price.usd,
+                "exchange_rate": data.exchange_rate.rate,
+                "btc_price": data.eth_price.btc,
+            }
+            if data.eth_price and data.exchange_rate
+            else {},
+        )
+        entities.append(EthereumBalanceSensor(coordinator, eth_price_local))
+
     for wallet in _get_wallets(entry):
         name = wallet["name"]
         address = wallet["address"]
