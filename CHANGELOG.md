@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1] - 2026-04-12
+
+### Fixed
+- Rate limiter now uses asyncio.Lock for proper atomic sliding-window enforcement
+- Coordinator clears wallet data when all wallets are removed
+- EtherscanAPIError and OERAuthenticationError properly caught in coordinator
+- Defensive parsing for malformed Etherscan API responses
+
+### Changed
+- Removed legacy address format support (CONF_ADDRESSES)
+- Consolidated wallet helpers between coordinator and sensor
+- Cleaned up unused translation keys and imports
+
 ## [0.3.0] - 2026-04-12
 
 ### Added
