@@ -41,7 +41,7 @@ ETH_PRICE_SENSOR = EthereumBalanceSensorDescription(
     suggested_display_precision=2,
     icon="mdi:currency-usd",
     value_fn=lambda data: round(data.eth_price.usd, 2) if data.eth_price else None,
-    extra_attrs_fn=lambda data: {"btc_price": data.eth_price.btc} if data.eth_price else {},
+    extra_attrs_fn=None,
 )
 
 
@@ -177,7 +177,6 @@ async def async_setup_entry(
             extra_attrs_fn=lambda data: {
                 "usd_price": data.eth_price.usd,
                 "exchange_rate": data.exchange_rate.rate,
-                "btc_price": data.eth_price.btc,
             }
             if data.eth_price and data.exchange_rate
             else {},
