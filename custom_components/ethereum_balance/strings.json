@@ -1,0 +1,53 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Etherscan",
+        "description": "Enter your Etherscan API key. You can get a free key at [etherscan.io/apis](https://etherscan.io/apis).",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with Etherscan",
+        "description": "Your API key is no longer valid. Please enter a new one.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to Etherscan",
+      "invalid_auth": "Invalid API key",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This API key is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ethereum Balance Options",
+        "description": "Enter one Ethereum address per line (0x followed by 40 hex characters).",
+        "data": {
+          "addresses": "Wallet addresses",
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "invalid_address": "One or more addresses are invalid. Use format: 0x followed by 40 hex characters."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "eth_price": {
+        "name": "ETH price"
+      },
+      "wallet_balance": {
+        "name": "Wallet balance"
+      }
+    }
+  }
+}
