@@ -14,7 +14,8 @@ DEFAULT_SCAN_INTERVAL: Final = 300
 MIN_SCAN_INTERVAL: Final = 60
 MAX_SCAN_INTERVAL: Final = 3600
 
-ETHERSCAN_API_URL: Final = "https://api.etherscan.io/api"
+ETHERSCAN_API_URL: Final = "https://api.etherscan.io/v2/api"
+ETHERSCAN_CHAIN_ID: Final = "1"
 
 WEI_PER_ETH: Final = 10**18
 MAX_BATCH_ADDRESSES: Final = 20

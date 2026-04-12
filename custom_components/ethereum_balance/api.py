@@ -9,7 +9,7 @@ from typing import Any
 
 import aiohttp
 
-from .const import ETHERSCAN_API_URL, MAX_BATCH_ADDRESSES, WEI_PER_ETH
+from .const import ETHERSCAN_API_URL, ETHERSCAN_CHAIN_ID, MAX_BATCH_ADDRESSES, WEI_PER_ETH
 from .errors import (
     EtherscanAPIError,
     EtherscanAuthenticationError,
@@ -46,6 +46,7 @@ class EtherscanClient:
 
             self._call_timestamps.append(time.monotonic())
             params["apikey"] = self._api_key
+            params["chainid"] = ETHERSCAN_CHAIN_ID
 
             try:
                 async with self._session.get(
