@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Connect to Etherscan",
-        "description": "Enter your Etherscan API key. You can get a free key at [etherscan.io/apis](https://etherscan.io/apis).",
+        "description": "Enter your Etherscan API key. You can get a free key at etherscan.io/apis.",
         "data": {
           "api_key": "API key"
         }
