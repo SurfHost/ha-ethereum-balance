@@ -35,7 +35,7 @@ ETH_PRICE_SENSOR = EthereumBalanceSensorDescription(
     name="ETH price",
     native_unit_of_measurement="USD",
     device_class=SensorDeviceClass.MONETARY,
-    state_class=SensorStateClass.MEASUREMENT,
+    state_class=None,
     suggested_display_precision=2,
     icon="mdi:currency-usd",
     value_fn=lambda data: round(data.eth_price.usd, 2) if data.eth_price else None,
@@ -147,7 +147,7 @@ async def async_setup_entry(
             name=f"ETH price {local_currency}",
             native_unit_of_measurement=local_currency,
             device_class=SensorDeviceClass.MONETARY,
-            state_class=SensorStateClass.MEASUREMENT,
+            state_class=None,
             suggested_display_precision=2,
             icon="mdi:cash-multiple",
             value_fn=lambda data: round(
