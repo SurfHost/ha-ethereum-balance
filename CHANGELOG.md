@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.3] - 2026-04-18
+
+### Fixed
+- ETH price sensors no longer produce a HA warning about incompatible `state_class`; price sensors now have no state class (spot price, not cumulative)
+
 ## [0.3.2] - 2026-04-12
 
 ### Fixed
