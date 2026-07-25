@@ -33,6 +33,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
+          # No uv.lock is committed, so nothing can match the cache key. On the
+          # default (auto) setup-uv turns the cache on and then warns on every run
+          # that it can never be invalidated.
+          enable-cache: false
           # Explicit because homeassistant 2026.3+ declares requires-python
           # >=3.14.2, which is newer than the Python the runner image ships. On
           # 3.13 the resolver silently falls back to homeassistant 2025.4.4, so
