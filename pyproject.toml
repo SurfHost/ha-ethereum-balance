@@ -31,6 +31,15 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.uv]
+# This repo is a Home Assistant custom component, not an installable package: the
+# code lives in custom_components/ethereum_balance and HACS copies that directory
+# in. Without this, `uv sync` tries to build the project as a wheel and hatchling
+# fails with "Unable to determine which files to ship", because no directory
+# matches the project name ha_ethereum_balance. The sibling integration repos all
+# carry the same line.
+package = false
+
 [tool.ruff]
 # Deliberately one release behind requires-python above. At py314 the formatter
 # rewrites `except (TimeoutError, aiohttp.ClientError):` in config_flow.py into the
