@@ -30,7 +30,10 @@ type EthereumBalanceConfigEntry = ConfigEntry[EthereumBalanceCoordinator]
 
 def get_wallets(entry: ConfigEntry[EthereumBalanceCoordinator]) -> list[dict[str, str]]:
     """Get wallet list from config entry options."""
-    return entry.options.get(CONF_WALLETS, [])
+    # entry.options is an untyped Mapping, so bind to an annotated local first.
+    # Returning the .get() result directly is an implicit Any return that strict mypy rejects.
+    wallets: list[dict[str, str]] = entry.options.get(CONF_WALLETS, [])
+    return wallets
 
 
 def get_wallet_addresses(entry: ConfigEntry[EthereumBalanceCoordinator]) -> list[str]:
@@ -84,9 +87,7 @@ class EthereumBalanceCoordinator(DataUpdateCoordinator[EthereumData]):
             now = time.monotonic()
             if now - self._last_oer_fetch > OER_REFRESH_INTERVAL or data.exchange_rate is None:
                 try:
-                    data.exchange_rate = await self.oer_client.async_get_rate(
-                        self.local_currency
-                    )
+                    data.exchange_rate = await self.oer_client.async_get_rate(self.local_currency)
                     self._last_oer_fetch = now
                     _LOGGER.debug(
                         "Fetched exchange rate: 1 USD = %s %s",

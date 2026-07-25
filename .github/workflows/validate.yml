@@ -12,7 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: HACS Validation
-        uses: hacs/action@main
+        # Pinned to a commit SHA rather than @main: a third-party action on a
+        # moving ref can change what runs in this repo without a commit here.
+        uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
         with:
           category: integration
 
@@ -21,4 +23,55 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Hassfest Validation
-        uses: home-assistant/actions/hassfest@master
+        # home-assistant/actions has no maintained release tags, so this is
+        # master pinned by SHA as of 2026-07-21. Bump it deliberately.
+        uses: home-assistant/actions/hassfest@e3fb68ebda13d88a0d695082f471ba2c83d025fb # master
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          # Explicit because homeassistant 2026.3+ declares requires-python
+          # >=3.14.2, which is newer than the Python the runner image ships. On
+          # 3.13 the resolver silently falls back to homeassistant 2025.4.4, so
+          # strict mypy would type-check against stubs a year older than the
+          # floor in pyproject.toml.
+          python-version: "3.14"
+      # Installs homeassistant + homeassistant-stubs from the dev extra. Without
+      # the stubs every homeassistant.* import resolves to Any and strict mypy
+      # passes while checking almost nothing.
+      - name: Install dependencies
+        run: uv sync --extra dev
+      # Ruff and mypy settings live in pyproject.toml. Do not pass overriding
+      # flags here, or CI and a local `uv run ruff check` stop agreeing.
+      - name: Ruff check
+        run: uv run ruff check .
+      - name: Ruff format check
+        run: uv run ruff format --check .
+      - name: Mypy
+        run: uv run mypy custom_components/ethereum_balance
+
+  release-gate:
+    # Gate on the other jobs so a tag that fails lint or hassfest cannot
+    # look like a clean release in the checks list.
+    needs: [validate-hacs, validate-hassfest, lint]
+    # Tag pushes only. A tag that disagrees with the manifest is how HACS ends up
+    # serving a release that reports the wrong version to users, and it cannot be
+    # fixed after the fact without deleting the tag. Fail before publishing.
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag must match manifest version
+        run: |
+          # Tags in this repo are prefixed with "v", the manifest version is not.
+          tag_version="${GITHUB_REF_NAME#v}"
+          manifest_version="$(jq -r .version custom_components/ethereum_balance/manifest.json)"
+          echo "tag: ${GITHUB_REF_NAME} (version ${tag_version})"
+          echo "manifest: ${manifest_version}"
+          if [ "${tag_version}" != "${manifest_version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match manifest version ${manifest_version}"
+            exit 1
+          fi

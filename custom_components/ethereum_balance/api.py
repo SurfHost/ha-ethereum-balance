@@ -9,7 +9,13 @@ from typing import Any
 
 import aiohttp
 
-from .const import ETHERSCAN_API_URL, ETHERSCAN_CHAIN_ID, MAX_BATCH_ADDRESSES, OER_API_URL, WEI_PER_ETH
+from .const import (
+    ETHERSCAN_API_URL,
+    ETHERSCAN_CHAIN_ID,
+    MAX_BATCH_ADDRESSES,
+    OER_API_URL,
+    WEI_PER_ETH,
+)
 from .errors import (
     EtherscanAPIError,
     EtherscanAuthenticationError,
@@ -57,9 +63,7 @@ class EtherscanClient:
                 response.raise_for_status()
                 data = await response.json()
         except (aiohttp.ClientError, TimeoutError) as err:
-            raise EtherscanConnectionError(
-                f"Cannot connect to Etherscan: {err}"
-            ) from err
+            raise EtherscanConnectionError(f"Cannot connect to Etherscan: {err}") from err
 
         if data.get("status") == "0":
             result = str(data.get("result", ""))
@@ -153,9 +157,7 @@ class OpenExchangeRatesClient:
         except OERAuthenticationError:
             raise
         except (aiohttp.ClientError, TimeoutError) as err:
-            raise OERConnectionError(
-                f"Cannot connect to Open Exchange Rates: {err}"
-            ) from err
+            raise OERConnectionError(f"Cannot connect to Open Exchange Rates: {err}") from err
 
     async def async_get_rate(self, currency: str) -> ExchangeRate:
         """Fetch the exchange rate from USD to the given currency."""
@@ -175,9 +177,7 @@ class OpenExchangeRatesClient:
         except OERAuthenticationError:
             raise
         except (aiohttp.ClientError, TimeoutError) as err:
-            raise OERConnectionError(
-                f"Cannot connect to Open Exchange Rates: {err}"
-            ) from err
+            raise OERConnectionError(f"Cannot connect to Open Exchange Rates: {err}") from err
 
         rates: dict[str, float] = data.get("rates", {})
         currency_upper = currency.upper()

@@ -9,7 +9,6 @@ from typing import Any
 
 import aiohttp
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -27,7 +26,12 @@ from .const import (
     MIN_SCAN_INTERVAL,
 )
 from .coordinator import EthereumBalanceConfigEntry
-from .errors import EtherscanAuthenticationError, EtherscanConnectionError, OERAuthenticationError, OERConnectionError
+from .errors import (
+    EtherscanAuthenticationError,
+    EtherscanConnectionError,
+    OERAuthenticationError,
+    OERConnectionError,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,9 +93,7 @@ class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 3
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
 
@@ -111,9 +113,7 @@ class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
-                unique_id = hashlib.sha256(
-                    user_input[CONF_API_KEY].encode()
-                ).hexdigest()[:8]
+                unique_id = hashlib.sha256(user_input[CONF_API_KEY].encode()).hexdigest()[:8]
                 await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
@@ -133,9 +133,7 @@ class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(
-        self, entry_data: dict[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
         """Handle reauth flow."""
         return await self.async_step_reauth_confirm()
 
@@ -183,9 +181,7 @@ class EthereumBalanceConfigFlow(ConfigFlow, domain=DOMAIN):
 class EthereumBalanceOptionsFlow(OptionsFlow):
     """Handle Ethereum Balance options."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         errors: dict[str, str] = {}
 
@@ -227,9 +223,7 @@ class EthereumBalanceOptionsFlow(OptionsFlow):
                     },
                 )
 
-        current_wallets: list[dict[str, str]] = self.config_entry.options.get(
-            CONF_WALLETS, []
-        )
+        current_wallets: list[dict[str, str]] = self.config_entry.options.get(CONF_WALLETS, [])
         current_interval: int = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
