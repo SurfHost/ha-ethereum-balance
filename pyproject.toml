@@ -2,7 +2,7 @@
 name = "ha-ethereum-balance"
 # Kept in step with custom_components/ethereum_balance/manifest.json. The
 # release-gate job in CI fails a tag push when the two disagree.
-version = "0.3.3"
+version = "0.3.4"
 description = "Ethereum balance tracker for Home Assistant using the Etherscan API"
 # homeassistant 2026.3.0 and later declare requires-python >=3.14.2, so claiming
 # >=3.13 alongside the homeassistant floor below makes the dependency set

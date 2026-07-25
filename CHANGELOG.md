@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.4] - 2026-07-25
+
+### Fixed
+- **`requires-python` was unsatisfiable.** It declared `>=3.13` alongside `homeassistant>=2026.4.0`, but Home Assistant 2026.3 and later require Python 3.14.2. The resolver therefore silently fell back to Home Assistant 2025.4.4, so type checking ran against stubs a year older than the declared floor. The floor is now 3.14.2.
+- `pyproject.toml` was left at `0.3.2` when `manifest.json` moved to `0.3.3`. The two are synced, and the release gate now compares the tag against both.
+
+### Added
+- MIT `LICENSE`, which the repository had never shipped.
+- CI now runs `ruff check`, `ruff format --check` and strict `mypy`. Previously the workflow validated HACS and hassfest metadata only, so no line of Python was ever executed by CI.
+- A release gate that fails a tag push when the tag disagrees with the version in `manifest.json` or `pyproject.toml`.
+
+### Changed
+- `.claude/` is gitignored, which was letting three stale worktree copies of the integration be linted.
+
 ## [0.3.3] - 2026-04-18
 
 ### Fixed
