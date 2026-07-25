@@ -64,14 +64,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Tag must match manifest version
+      - name: Tag must match manifest and pyproject versions
         run: |
           # Tags in this repo are prefixed with "v", the manifest version is not.
           tag_version="${GITHUB_REF_NAME#v}"
           manifest_version="$(jq -r .version custom_components/ethereum_balance/manifest.json)"
+          pyproject_version="$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)"
           echo "tag: ${GITHUB_REF_NAME} (version ${tag_version})"
           echo "manifest: ${manifest_version}"
+          echo "pyproject: ${pyproject_version}"
+          status=0
           if [ "${tag_version}" != "${manifest_version}" ]; then
             echo "::error::Tag ${GITHUB_REF_NAME} does not match manifest version ${manifest_version}"
-            exit 1
+            status=1
           fi
+          # pyproject is checked too: the 0.3.3 bump moved manifest.json only and
+          # left pyproject behind at 0.3.2, which nothing would have caught.
+          if [ "${tag_version}" != "${pyproject_version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject version ${pyproject_version}"
+            status=1
+          fi
+          exit "${status}"
