@@ -10,7 +10,7 @@ jobs:
   validate-hacs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: HACS Validation
         # Pinned to a commit SHA rather than @main: a third-party action on a
         # moving ref can change what runs in this repo without a commit here.
@@ -21,7 +21,7 @@ jobs:
   validate-hassfest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Hassfest Validation
         # home-assistant/actions has no maintained release tags, so this is
         # master pinned by SHA as of 2026-07-21. Bump it deliberately.
@@ -30,8 +30,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      # Pinned to a SHA, not a tag: setup-uv stopped publishing floating major
+      # tags at v8 as a supply chain measure, so "@v9" does not resolve.
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           # No uv.lock is committed, so nothing can match the cache key. On the
           # default (auto) setup-uv turns the cache on and then warns on every run
@@ -67,7 +69,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Tag must match manifest and pyproject versions
         run: |
           # Tags in this repo are prefixed with "v", the manifest version is not.
