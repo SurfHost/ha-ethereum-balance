@@ -1,7 +1,7 @@
 # Ethereum Balance for Home Assistant
 
 [![Validate](https://github.com/SurfHost/ha-ethereum-balance/actions/workflows/validate.yml/badge.svg)](https://github.com/SurfHost/ha-ethereum-balance/actions/workflows/validate.yml)
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Marketplace](https://img.shields.io/badge/Marketplace-Custom_repository-41BDF5.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=SurfHost&repository=ha-ethereum-balance&category=integration)
 
 A Home Assistant custom integration to monitor Ethereum wallet balances using the [Etherscan API](https://etherscan.io/apis).
 
@@ -21,17 +21,21 @@ A Home Assistant custom integration to monitor Ethereum wallet balances using th
 
 ## Installation
 
-### HACS (Recommended)
+### Marketplace (recommended)
 
-[![Add Repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=SurfHost&repository=ha-ethereum-balance&category=integration)
+Since Home Assistant 2026.11, HACS is built into Home Assistant as the **Marketplace**. An existing HACS installation of this integration moves over by itself and keeps receiving updates.
+
+[![Open your Home Assistant instance and open this repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=SurfHost&repository=ha-ethereum-balance&category=integration)
 
 Or manually:
 
-1. Open HACS in Home Assistant
-2. Click the three dots menu and select **Custom repositories**
-3. Add `https://github.com/SurfHost/ha-ethereum-balance` with category **Integration**
-4. Search for "Ethereum Balance" and install it
+1. Go to **Settings > Marketplace**
+2. Open the menu and choose **Custom repositories**
+3. Add `SurfHost/ha-ethereum-balance` with category **Integration**
+4. Search for "Ethereum Balance" and install
 5. Restart Home Assistant
+
+On Home Assistant before 2026.11, use HACS the same way.
 
 ### Manual
 
